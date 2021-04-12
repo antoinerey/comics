@@ -34,8 +34,8 @@ func main() {
 	serie = strings.ReplaceAll(serie, ")", "")
 	serie = strings.ToLower(serie)
 
-	directory := *flagBase + "/" + *flagSerie + "/" + *flagChapter
-	directoryTemp := directory + "/temp"
+	directory := *flagBase + "/" + *flagSerie
+	directoryTemp := "/tmp/" + *flagSerie
 
 	err := os.MkdirAll(directoryTemp, 0755)
 	if err != nil {
@@ -105,6 +105,7 @@ func main() {
 	}
 
 	// ---
+	// All good.
 
 	fmt.Println("Done")
 }
