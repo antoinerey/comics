@@ -35,7 +35,7 @@ func main() {
 	serie = strings.ToLower(serie)
 
 	directory := *flagBase + "/" + *flagSerie
-	directoryTemp := "/tmp/" + *flagSerie
+	directoryTemp := "/tmp/" + *flagSerie + "/chapters/" + *flagChapter
 
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
