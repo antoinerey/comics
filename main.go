@@ -9,33 +9,25 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gocolly/colly"
 )
 
-func main() {
+func download(base, serie, chapter string) {
 	var files []string
-
-	// ---
-	// Define the CLI flags.
-
-	flagBase := flag.String("base", "dist", "the base directory")
-	flagSerie := flag.String("serie", "-", "the serie")
-	flagChapter := flag.String("chapter", "1", "the chapter")
-
-	flag.Parse()
 
 	// ---
 	// Create the directory structure.
 
-	serie := strings.ReplaceAll(*flagSerie, " ", "-")
-	serie = strings.ReplaceAll(serie, "(", "")
-	serie = strings.ReplaceAll(serie, ")", "")
-	serie = strings.ToLower(serie)
+	slug := strings.ReplaceAll(serie, " ", "-")
+	slug = strings.ReplaceAll(slug, "(", "")
+	slug = strings.ReplaceAll(slug, ")", "")
+	slug = strings.ToLower(slug)
 
-	directory := *flagBase + "/" + *flagSerie
-	directoryTemp := "/tmp/" + *flagSerie + "/chapters/" + *flagChapter
+	directory := base + "/" + serie
+	directoryTemp := "/tmp/" + serie + "/chapters/" + chapter
 
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
@@ -80,12 +72,12 @@ func main() {
 		files = append(files, filename)
 	})
 
-	collector.Visit("https://readcomicsonline.ru/comic/" + serie + "/" + *flagChapter)
+	collector.Visit("https://readcomicsonline.ru/comic/" + slug + "/" + chapter)
 
 	// ---
 	// Create the .cbz file.
 
-	filename := serie + "-" + *flagChapter + ".cbz"
+	filename := slug + "-" + chapter + ".cbz"
 
 	zipFile, err := os.Create(directory + "/" + filename)
 	if err != nil {
@@ -112,5 +104,37 @@ func main() {
 	// ---
 	// All good.
 
-	fmt.Println("Done")
+	fmt.Println("Done", serie, chapter)
+}
+
+func main() {
+	// ---
+	// Define the CLI flags.
+
+	base := flag.String("base", "dist", "the base directory")
+	serie := flag.String("serie", "unknown", "the serie")
+	chapter := flag.String("chapter", "1", "the chapter")
+
+	flag.Parse()
+
+	c := strings.Split(*chapter, "..")
+
+	// ---
+	// Download one chapter.
+
+	if len(c) == 1 {
+		download(*base, *serie, c[0])
+	}
+
+	// ---
+	// Download all chapters.
+
+	if len(c) == 2 {
+		first, _ := strconv.Atoi(c[0])
+		last, _ := strconv.Atoi(c[1])
+
+		for i := first; i <= last; i++ {
+			download(*base, *serie, strconv.Itoa(i))
+		}
+	}
 }
