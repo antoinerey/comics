@@ -18,16 +18,20 @@ import (
 func download(base, serie, chapter string) {
 	var files []string
 
-	// ---
-	// Create the directory structure.
-
 	slug := strings.ReplaceAll(serie, " ", "-")
 	slug = strings.ReplaceAll(slug, "(", "")
 	slug = strings.ReplaceAll(slug, ")", "")
 	slug = strings.ToLower(slug)
 
+	// Pad the chapter with zeros so it's always 3-digits long. This helps when
+	// storing .cbz files, so that readers correctly order them in the library.
+	chapterPadded := fmt.Sprintf("%03v", chapter)
+
+	// ---
+	// Create the directory structure.
+
 	directory := base + "/" + serie
-	directoryTemp := "/tmp/" + serie + "/chapters/" + chapter
+	directoryTemp := "/tmp/" + serie + "/chapters/" + chapterPadded
 
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
@@ -77,7 +81,7 @@ func download(base, serie, chapter string) {
 	// ---
 	// Create the .cbz file.
 
-	filename := slug + "-" + chapter + ".cbz"
+	filename := slug + "-" + chapterPadded + ".cbz"
 
 	zipFile, err := os.Create(directory + "/" + filename)
 	if err != nil {
