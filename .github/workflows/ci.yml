@@ -1,0 +1,17 @@
+name: Comics Release
+
+on:
+  push:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: comics
+          path: comics
