@@ -37,7 +37,12 @@ func main() {
 	directory := *flagBase + "/" + *flagSerie
 	directoryTemp := "/tmp/" + *flagSerie
 
-	err := os.MkdirAll(directoryTemp, 0755)
+	err := os.MkdirAll(directory, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.MkdirAll(directoryTemp, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
