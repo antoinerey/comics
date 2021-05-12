@@ -19,6 +19,7 @@ func download(base, serie, chapter string) {
 	var files []string
 
 	slug := strings.ReplaceAll(serie, " ", "-")
+	slug = strings.ReplaceAll(slug, ":", "")
 	slug = strings.ReplaceAll(slug, "(", "")
 	slug = strings.ReplaceAll(slug, ")", "")
 	slug = strings.ToLower(slug)
@@ -55,12 +56,11 @@ func download(base, serie, chapter string) {
 		fmt.Println("Visiting", request.URL.String())
 	})
 
-	collector.OnHTML("#all img", func (element *colly.HTMLElement) {
-		fmt.Println("Downloading", element.Attr("data-src"))
+	collector.OnHTML(".chapter-container > img", func (element *colly.HTMLElement) {
+		fmt.Println("Downloading", element.Attr("alt"))
 
-		pageUrl := strings.Trim(element.Attr("data-src"), " ")
-		segments := strings.Split(pageUrl, "/")
-		filename := segments[len(segments) - 1]
+		pageUrl := strings.Trim(element.Attr("src"), " ")
+		filename := element.Attr("alt") + ".jpg"
 
 		response, err := http.Get(pageUrl)
 		if err != nil {
@@ -76,7 +76,7 @@ func download(base, serie, chapter string) {
 		files = append(files, filename)
 	})
 
-	collector.Visit("https://readcomicsonline.ru/comic/" + slug + "/" + chapter)
+	collector.Visit("https://viewcomics.me/" + slug + "/issue-" + chapter + "/full")
 
 	// ---
 	// Create the .cbz file.
