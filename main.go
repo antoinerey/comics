@@ -15,34 +15,19 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func download(base, serie, chapter string) {
+func download(directory, series, issue string) {
+	var imgs []*colly.HTMLElement
 	var files []string
 
-	slug := strings.ReplaceAll(serie, " ", "-")
+	slug := strings.ReplaceAll(series, " ", "-")
 	slug = strings.ReplaceAll(slug, ":", "")
 	slug = strings.ReplaceAll(slug, "(", "")
 	slug = strings.ReplaceAll(slug, ")", "")
 	slug = strings.ToLower(slug)
 
-	// Pad the chapter with zeros so it's always 3-digits long. This helps when
+	// Pad the issue with zeros so it's always 3-digits long. This helps when
 	// storing .cbz files, so that readers correctly order them in the library.
-	chapterPadded := fmt.Sprintf("%03v", chapter)
-
-	// ---
-	// Create the directory structure.
-
-	directory := base + "/" + serie
-	directoryTemp := "/tmp/" + serie + "/chapters/" + chapterPadded
-
-	err := os.MkdirAll(directory, 0755)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = os.MkdirAll(directoryTemp, 0755)
-	if err != nil {
-		log.Fatal(err)
-	}
+	issuePadded := fmt.Sprintf("%03v", issue)
 
 	// ---
 	// Download each images.
@@ -57,33 +42,59 @@ func download(base, serie, chapter string) {
 	})
 
 	collector.OnHTML(".chapter-container > img", func (element *colly.HTMLElement) {
-		fmt.Println("Downloading", element.Attr("alt"))
+		imgs = append(imgs, element)
+	})
 
-		pageUrl := strings.Trim(element.Attr("src"), " ")
-		filename := element.Attr("alt") + ".jpg"
+	collector.Visit("https://viewcomics.me/" + slug + "/issue-" + issue + "/full")
+
+	if len(imgs) == 0 {
+		log.Fatal("No images found.")
+	}
+
+	// ---
+	// Create the directory structure.
+
+	directorySeries := directory + "/" + series
+	directorySeriesTemp := "/tmp/" + series
+	directoryIssueTemp := directorySeriesTemp + "/issues/" + issuePadded
+	defer os.RemoveAll(directorySeriesTemp)
+
+	err := os.MkdirAll(directorySeries, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.MkdirAll(directoryIssueTemp, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, img := range imgs {
+		fmt.Println("Downloading", img.Attr("alt"))
+
+		pageUrl := strings.Trim(img.Attr("src"), " ")
+		filename := img.Attr("alt") + ".jpg"
 
 		response, err := http.Get(pageUrl)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		file, err := os.Create(directoryTemp + "/" + filename)
+		file, err := os.Create(directoryIssueTemp + "/" + filename)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		io.Copy(file, response.Body)
 		files = append(files, filename)
-	})
-
-	collector.Visit("https://viewcomics.me/" + slug + "/issue-" + chapter + "/full")
+	}
 
 	// ---
 	// Create the .cbz file.
 
-	filename := slug + "-" + chapterPadded + ".cbz"
+	filename := slug + "-" + issuePadded + ".cbz"
 
-	zipFile, err := os.Create(directory + "/" + filename)
+	zipFile, err := os.Create(directorySeries + "/" + filename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,7 +103,7 @@ func download(base, serie, chapter string) {
 	defer zipWriter.Close()
 
 	for _, file := range files {
-		content, err := ioutil.ReadFile(directoryTemp + "/" + file)
+		content, err := ioutil.ReadFile(directoryIssueTemp + "/" + file)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -108,37 +119,44 @@ func download(base, serie, chapter string) {
 	// ---
 	// All good.
 
-	fmt.Println("Done", serie, chapter)
+	fmt.Println("Done", series, issue)
 }
 
 func main() {
 	// ---
 	// Define the CLI flags.
 
-	base := flag.String("base", "dist", "the base directory")
-	serie := flag.String("serie", "unknown", "the serie")
-	chapter := flag.String("chapter", "1", "the chapter")
+	directory := flag.String("directory", "dist", "")
+	series := flag.String("series", "unknown", "")
+	issues := flag.String("issues", "1", "")
 
 	flag.Parse()
 
-	c := strings.Split(*chapter, "..")
+	i := strings.Split(*issues, "..")
 
 	// ---
-	// Download one chapter.
+	// Download one issue.
 
-	if len(c) == 1 {
-		download(*base, *serie, c[0])
+	if len(i) == 1 {
+		download(*directory, *series, i[0])
 	}
 
 	// ---
-	// Download all chapters.
+	// Download all issues.
 
-	if len(c) == 2 {
-		first, _ := strconv.Atoi(c[0])
-		last, _ := strconv.Atoi(c[1])
+	if len(i) == 2 {
+		first, err := strconv.Atoi(i[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		last, err := strconv.Atoi(i[1])
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		for i := first; i <= last; i++ {
-			download(*base, *serie, strconv.Itoa(i))
+			download(*directory, *series, strconv.Itoa(i))
 		}
 	}
 }
