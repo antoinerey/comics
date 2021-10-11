@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/gocolly/colly"
@@ -37,11 +36,11 @@ func download(directory, series, issue string) {
 		colly.MaxDepth(1),
 	)
 
-	collector.OnRequest(func (request *colly.Request) {
+	collector.OnRequest(func(request *colly.Request) {
 		fmt.Println("Visiting", request.URL.String())
 	})
 
-	collector.OnHTML(".chapter-container > img", func (element *colly.HTMLElement) {
+	collector.OnHTML(".chapter-container > img", func(element *colly.HTMLElement) {
 		imgs = append(imgs, element)
 	})
 
@@ -132,31 +131,44 @@ func main() {
 
 	flag.Parse()
 
-	i := strings.Split(*issues, "..")
+	// i := strings.Split(*issues, "..")
 
 	// ---
 	// Download one issue.
 
-	if len(i) == 1 {
-		download(*directory, *series, i[0])
-	}
+	// if len(i) == 1 {
+	// 	download(*directory, *series, i[0])
+	// }
 
 	// ---
 	// Download all issues.
 
-	if len(i) == 2 {
-		first, err := strconv.Atoi(i[0])
-		if err != nil {
-			log.Fatal(err)
-		}
+	// if len(i) == 2 {
+	// 	first, err := strconv.Atoi(i[0])
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
 
-		last, err := strconv.Atoi(i[1])
-		if err != nil {
-			log.Fatal(err)
-		}
+	// 	last, err := strconv.Atoi(i[1])
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
 
-		for i := first; i <= last; i++ {
-			download(*directory, *series, strconv.Itoa(i))
-		}
-	}
+	// 	for i := first; i <= last; i++ {
+	// 		download(*directory, *series, strconv.Itoa(i))
+	// 	}
+	// }
+
+	log.Print(*series)
+
+	collector := colly.NewCollector(
+		// Only scrap the current page. Do not dive any deeper.
+		colly.MaxDepth(1),
+	)
+
+	collector.OnHTML(".basic-list a", func(element *colly.HTMLElement) {
+		log.Print(element.Attr("href"))
+	})
+
+	collector.Visit(*series)
 }

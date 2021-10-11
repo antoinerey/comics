@@ -1,4 +1,4 @@
-module go-scrapper
+module github.com/antoinerey/comics
 
 go 1.15
 
