@@ -1,43 +1,47 @@
 package series
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/antoinerey/comics/internal/collector"
+	"github.com/antoinerey/comics/internal/issues"
 	"github.com/gocolly/colly"
 )
 
-var collector = colly.NewCollector(
-	// Only scrap the current page. Do not dive any deeper.
-	colly.MaxDepth(1),
-)
+type Series struct {
+	URL    string
+	Title  string
+	Issues []issues.Issue
 
-type Series = struct {
-	Url        string
-	Name       string
-	IssuesURLs []string
+	collector *colly.Collector
 }
 
-func ParseURL(url string) (Series, error) {
-	var name string
-	var issuesURLs []string
+func CreateSeries(URL string) Series {
+	return Series{
+		URL:       URL,
+		collector: collector.CreateCollector(),
+	}
+}
 
-	collector.OnHTML(".anime-details .title", func(element *colly.HTMLElement) {
-		name = element.Text
+func (series Series) Parse() (Series, error) {
+	series.collector.OnHTML(".anime-details .title", func(element *colly.HTMLElement) {
+		// The parsed HTML includes new line character.
+		series.Title = strings.Trim(element.Text, "\n")
 	})
 
-	collector.OnHTML(".basic-list a", func(element *colly.HTMLElement) {
+	series.collector.OnHTML(".basic-list a", func(element *colly.HTMLElement) {
+		// Save the full issue URL.
+		issueURL := fmt.Sprintf("%s/full", element.Attr("href"))
 		// Prepend the URL to the list.
-		issuesURLs = append([]string{element.Attr("href")}, issuesURLs...)
+		series.Issues = append([]issues.Issue{issues.CreateIssue(issueURL)}, series.Issues...)
 	})
 
-	err := collector.Visit(url)
-	if err != nil {
-		return Series{}, err
-	}
+	err := series.collector.Visit(series.URL)
 
-	series := Series{
-		Url:        url,
-		Name:       name,
-		IssuesURLs: issuesURLs,
-	}
+	return series, err
+}
 
-	return series, nil
+func (series Series) GetDirectory(root string) string {
+	return fmt.Sprintf("%s/%s", root, series.Title)
 }
