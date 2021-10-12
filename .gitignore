@@ -1,5 +1,8 @@
+# IDE
+.vscode
+
 # Library directory.
 dist
 
 # Built CLI.
-comics
+/comics
