@@ -9,11 +9,13 @@ import (
 )
 
 var url string
-var root string
+var baseDir string
+var tmpDir string
 var missing bool
 
 func init() {
-	flag.StringVar(&root, "root", "dist", "The path to the library root")
+	flag.StringVar(&baseDir, "baseDir", "dist", "The path to the library base directory")
+	flag.StringVar(&tmpDir, "tmpDir", "/tmp", "The path to the temporary directory")
 	flag.BoolVar(&missing, "missing", true, "Only download missing issues")
 	flag.Parse()
 
@@ -30,11 +32,11 @@ func main() {
 	for _, issue := range series.Issues {
 		issue = issue.Parse()
 
-		if missing && !issue.IsMissing(series.GetDirectory(root)) {
+		if missing && !issue.IsMissing(series.GetDirectory(baseDir)) {
 			log.Printf("Skipping %s. It's already been downloaded", issue.Title)
 			continue
 		}
 
-		issue.Download(series.GetDirectory(root))
+		issue.Download(series.GetDirectory(baseDir), series.GetDirectory(tmpDir))
 	}
 }

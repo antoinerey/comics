@@ -47,23 +47,21 @@ func (issue Issue) Parse() Issue {
 	return issue
 }
 
-func (issue Issue) Download(path string) {
-	tmpPath := fmt.Sprintf("/tmp/comics/%s", issue.Title)
-
-	err := os.MkdirAll(tmpPath, 0755)
-	defer os.RemoveAll(tmpPath)
+func (issue Issue) Download(baseDir, tmpDir string) {
+	err := os.MkdirAll(tmpDir, 0755)
+	defer os.RemoveAll(tmpDir)
 	if err != nil {
-		log.Printf("Failed to create temporary directory at path %s", tmpPath)
+		log.Printf("Failed to create temporary directory at path %s", tmpDir)
 		log.Fatal(err)
 	}
 
-	err = os.MkdirAll(path, 0755)
+	err = os.MkdirAll(baseDir, 0755)
 	if err != nil {
-		log.Printf("Failed to create library directory at path %s", path)
+		log.Printf("Failed to create library directory at path %s", baseDir)
 		log.Fatal(err)
 	}
 
-	zipPath := fmt.Sprintf("%s/%s.cbz", tmpPath, issue.Title)
+	zipPath := fmt.Sprintf("%s/%s.cbz", tmpDir, issue.Title)
 	zipFile, err := os.Create(zipPath)
 	if err != nil {
 		log.Printf("Failed to create .cbz file at path %s", zipPath)
@@ -104,7 +102,7 @@ func (issue Issue) Download(path string) {
 		}
 	}
 
-	err = os.Rename(zipPath, fmt.Sprintf("%s/%s.cbz", path, issue.Title))
+	err = os.Rename(zipPath, fmt.Sprintf("%s/%s.cbz", baseDir, issue.Title))
 	if err != nil {
 		log.Print("Failed to move temporary .cbz file to library path")
 		log.Fatal(err)
