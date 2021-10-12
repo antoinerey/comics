@@ -17,7 +17,7 @@ func init() {
 	flag.BoolVar(&missing, "missing", true, "Only download missing issues")
 	flag.Parse()
 
-	url = os.Args[1]
+	url = os.Args[len(os.Args)-1]
 }
 
 func main() {
