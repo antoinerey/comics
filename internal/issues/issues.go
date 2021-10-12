@@ -112,3 +112,20 @@ func (issue Issue) Download(path string) {
 
 	log.Printf("Successfuly downloaded issue %s", issue.Title)
 }
+
+func (issue Issue) IsMissing(path string) bool {
+	_, err := os.Stat(fmt.Sprintf("%s/%s.cbz", path, issue.Title))
+
+	if err == nil {
+		return false
+	}
+
+	if os.IsNotExist(err) {
+		return true
+	}
+
+	log.Printf("Failed to check if issue already exists at path %s", path)
+	log.Fatal(err)
+
+	return false
+}

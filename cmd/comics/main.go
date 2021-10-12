@@ -10,9 +10,11 @@ import (
 
 var url string
 var root string
+var missing bool
 
 func init() {
 	flag.StringVar(&root, "root", "dist", "The path to the library root")
+	flag.BoolVar(&missing, "missing", true, "Only download missing issues")
 	flag.Parse()
 
 	url = os.Args[1]
@@ -26,6 +28,13 @@ func main() {
 	}
 
 	for _, issue := range series.Issues {
-		issue.Parse().Download(series.GetDirectory(root))
+		issue = issue.Parse()
+
+		if missing && !issue.IsMissing(series.GetDirectory(root)) {
+			log.Printf("Skipping %s. It's already been downloaded", issue.Title)
+			continue
+		}
+
+		issue.Download(series.GetDirectory(root))
 	}
 }
