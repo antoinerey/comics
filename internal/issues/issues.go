@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/antoinerey/comics/internal/collector"
@@ -14,16 +16,26 @@ import (
 )
 
 type Issue struct {
-	URL   string
-	Title string
-	Pages []*colly.HTMLElement
+	URL    string
+	Title  string
+	Number int // -1 for non-integers issues (e.g. "Full", "Annual")
+	Pages  []*colly.HTMLElement
 
 	collector *colly.Collector
 }
 
 func CreateIssue(URL string) Issue {
+	re := regexp.MustCompile(`.*\/issue-(.*)\/full`)
+	match := re.FindStringSubmatch(URL)
+
+	number, err := strconv.Atoi(match[1])
+	if err != nil {
+		number = -1
+	}
+
 	return Issue{
 		URL:       URL,
+		Number:    number,
 		collector: collector.CreateCollector(),
 	}
 }
